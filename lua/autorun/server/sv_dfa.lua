@@ -8,15 +8,15 @@ cvars.AddChangeCallback( "dfa_punishspeed", function( _, _, val )
     punishSpeed = tonumber( val )
 end )
 
--- local damageMultiplier = CreateConVar( "dfa_damagemultiplier", 1, { FCVAR_ARCHIVE }, "The damage multiplier.", 0 ):GetInt()
--- cvars.AddChangeCallback( "dfa_damagemultiplier", function( _, _, val )
---     damageMultiplier = tonumber( val )
--- end )
-
-local maxDamage = CreateConVar( "dfa_maxdamage", 10, { FCVAR_ARCHIVE }, "The max damage damage ticks can do.", 0 ):GetInt()
-cvars.AddChangeCallback( "dfa_maxdamage", function( _, _, val )
-    maxDamage = tonumber( val )
+local damageMultiplier = CreateConVar( "dfa_damagemultiplier", 1, { FCVAR_ARCHIVE }, "The damage multiplier.", 0 ):GetInt()
+cvars.AddChangeCallback( "dfa_damagemultiplier", function( _, _, val )
+    damageMultiplier = tonumber( val )
 end )
+
+-- local maxDamage = CreateConVar( "dfa_maxdamage", 10, { FCVAR_ARCHIVE }, "The max damage damage ticks can do.", 0 ):GetInt()
+-- cvars.AddChangeCallback( "dfa_maxdamage", function( _, _, val )
+--     maxDamage = tonumber( val )
+-- end )
 
 local function punishSeat( ply, veh, speed )
     ply:PrintMessage( HUD_PRINTCENTER, "You are going too fast!" )
