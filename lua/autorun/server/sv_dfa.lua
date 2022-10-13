@@ -3,12 +3,12 @@ local IsValid = IsValid
 local engine_TickCount = engine.TickCount
 local next = next
 
-local punishSpeed = CreateConVar( "dfa_punishspeed", 100, { FCVAR_ARCHIVE }, "The speed at which the driver should receive punishment.", 0 ):GetInt()
+local punishSpeed = CreateConVar( "dfa_punishspeed", 400, { FCVAR_ARCHIVE }, "The speed at which the driver should receive punishment.", 0 ):GetInt()
 cvars.AddChangeCallback( "dfa_punishspeed", function( _, _, val )
     punishSpeed = tonumber( val )
 end )
 
-local damageMultiplier = CreateConVar( "dfa_damagemultiplier", 1, { FCVAR_ARCHIVE }, "The damage multiplier.", 0 ):GetInt()
+local damageMultiplier = CreateConVar( "dfa_damagemultiplier", 0.4, { FCVAR_ARCHIVE }, "The damage multiplier.", 0 ):GetInt()
 cvars.AddChangeCallback( "dfa_damagemultiplier", function( _, _, val )
     damageMultiplier = tonumber( val )
 end )
@@ -19,9 +19,9 @@ cvars.AddChangeCallback( "dfa_interval", function( _, _, val )
 end )
 
 local function damageVehicle( veh, ply, speed )
-    ply:PrintMessage( HUD_PRINTCENTER, "You are accelerating too fast!" )
+    ply:PrintMessage( HUD_PRINTCENTER, "You're blacking out!" )
     local damage = math.floor( ( speed - punishSpeed ) / 10  * damageMultiplier )
-    ply:ChatPrint( speed - punishSpeed .. " " .. damage )
+    local pitch = math.Clamp( 100 + -damage, 40, 100 )
     veh:TakeDamage( damage, game.GetWorld(), veh )
 end
 
@@ -51,12 +51,12 @@ local function checkVehicle( veh, trackEnt )
     trackEnt.DFANextCheck = tickCount + checkInterval
 
     local lastPos = trackEnt.DFALastPos
-    trackEnt.DFALastPos = trackEnt:GetPos()
+    trackEnt.DFALastPos = trackEnt:GetVelocity()
     if not lastPos then
         return
     end
 
-    local speed = ( lastPos - trackEnt:GetPos() ):Length()
+    local speed = ( lastPos - trackEnt:GetVelocity() ):Length()
     if speed > punishSpeed then
         damageVehicle( veh, driver, speed )
     end
