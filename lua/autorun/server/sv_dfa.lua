@@ -3,7 +3,7 @@ local IsValid = IsValid
 local engine_TickCount = engine.TickCount
 local next = next
 
-local punishSpeed = CreateConVar( "dfa_punishspeed", 55, { FCVAR_ARCHIVE }, "The speed at which the driver should receive punishment.", 0 ):GetInt()
+local punishSpeed = CreateConVar( "dfa_punishspeed", 100, { FCVAR_ARCHIVE }, "The speed at which the driver should receive punishment.", 0 ):GetInt()
 cvars.AddChangeCallback( "dfa_punishspeed", function( _, _, val )
     punishSpeed = tonumber( val )
 end )
@@ -38,16 +38,17 @@ local function checkVehicle( veh, trackEnt )
     end
 
     local tickCount = engine_TickCount()
-    local lastCheck = trackEnt.DFALastCheck
+    local nextCheck = trackEnt.DFANextCheck
 
-    if not lastCheck then
-        trackEnt.DFALastCheck = tickCount
+    if not nextCheck then
+        trackEnt.DFANextCheck = tickCount + checkInterval
         return
     end
 
-    if lastCheck + checkInterval > tickCount then
+    if tickCount < nextCheck then
         return
     end
+    trackEnt.DFANextCheck = tickCount + checkInterval
 
     local lastPos = trackEnt.DFALastPos
     trackEnt.DFALastPos = trackEnt:GetPos()
