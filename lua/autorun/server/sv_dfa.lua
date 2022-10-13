@@ -1,9 +1,9 @@
-local activeChairs = {}
-local lastCheckedChair = 1
-
+local activeVehicles = {}
 local IsValid = IsValid
+local engine_TickCount = engine.TickCount
+local next = next
 
-local punishSpeed = CreateConVar( "dfa_punishspeed", 2500, { FCVAR_ARCHIVE }, "The speed at which the driver should receive punishment.", 0 ):GetInt()
+local punishSpeed = CreateConVar( "dfa_punishspeed", 55, { FCVAR_ARCHIVE }, "The speed at which the driver should receive punishment.", 0 ):GetInt()
 cvars.AddChangeCallback( "dfa_punishspeed", function( _, _, val )
     punishSpeed = tonumber( val )
 end )
@@ -13,50 +13,78 @@ cvars.AddChangeCallback( "dfa_damagemultiplier", function( _, _, val )
     damageMultiplier = tonumber( val )
 end )
 
--- local maxDamage = CreateConVar( "dfa_maxdamage", 10, { FCVAR_ARCHIVE }, "The max damage damage ticks can do.", 0 ):GetInt()
--- cvars.AddChangeCallback( "dfa_maxdamage", function( _, _, val )
---     maxDamage = tonumber( val )
--- end )
+local checkInterval = CreateConVar( "dfa_interval", 5, { FCVAR_ARCHIVE }, "The amount of ticks between acceleration checks.", 0 ):GetInt()
+cvars.AddChangeCallback( "dfa_interval", function( _, _, val )
+    checkInterval = tonumber( val )
+end )
 
-local function punishSeat( ply, veh, speed )
-    ply:PrintMessage( HUD_PRINTCENTER, "You are going too fast!" )
-    local damage = math.floor( ( speed - punishSpeed ) / 1000  * damageMultiplier )
+local function damageVehicle( veh, ply, speed )
+    ply:PrintMessage( HUD_PRINTCENTER, "You are accelerating too fast!" )
+    local damage = math.floor( ( speed - punishSpeed ) / 10  * damageMultiplier )
     ply:ChatPrint( speed - punishSpeed .. " " .. damage )
     veh:TakeDamage( damage, game.GetWorld(), veh )
 end
 
-local function checkVehicle( veh, index )
-    if not IsValid( veh ) then
-        return table.remove( activeChairs, index )
+local function checkVehicle( veh, trackEnt )
+    if not IsValid( veh ) or not IsValid( trackEnt ) then
+        activeVehicles[veh] = nil
+        return
     end
 
     local driver = veh:GetDriver()
-
     if not IsValid( driver ) then
-        return table.remove( activeChairs, index )
+        activeVehicles[veh] = nil
+        return
     end
-    local speed = veh:GetVelocity():Length()
+
+    local tickCount = engine_TickCount()
+    local lastCheck = trackEnt.DFALastCheck
+
+    if not lastCheck then
+        trackEnt.DFALastCheck = tickCount
+        return
+    end
+
+    if lastCheck + checkInterval > tickCount then
+        return
+    end
+
+    local lastPos = trackEnt.DFALastPos
+    trackEnt.DFALastPos = trackEnt:GetPos()
+    if not lastPos then
+        return
+    end
+
+    local speed = ( lastPos - trackEnt:GetPos() ):Length()
     if speed > punishSpeed then
-        punishSeat( driver, veh, speed )
+        damageVehicle( veh, driver, speed )
     end
 end
 
 local function runCheck()
-    if #activeChairs == 0 then return end
+    if not next( activeVehicles ) then return end
 
-    local chair = activeChairs[lastCheckedChair]
-    checkVehicle( chair, lastCheckedChair )
-
-    lastCheckedChair = lastCheckedChair + 1
-    if lastCheckedChair > #activeChairs then lastCheckedChair = 1 end
+    for veh, trackEnt in pairs( activeVehicles ) do
+        checkVehicle( veh, trackEnt )
+    end
 end
 
 hook.Add( "Think", "DFA_CheckSpeeds", runCheck )
 
 hook.Add( "PlayerEnteredVehicle", "DFA_RegisterSeat", function( _, veh )
-    table.insert( activeChairs, veh )
+    local trackEnt = veh
+    local parent = veh:GetParent()
+    if IsValid( parent ) then
+        trackEnt = parent
+    end
+    activeVehicles[veh] = trackEnt
 end )
 
 hook.Add( "PlayerLeaveVehicle", "DFA_UnregisterSeat", function( _, veh )
-    table.RemoveByValue( activeChairs, veh )
+    local trackEnt = activeVehicles[veh]
+    trackEnt.DFALastCheck = nil
+    trackEnt.DFALastPos = nil
+    veh.DFALastCheck = nil
+    veh.DFALastPos = nil
+    activeVehicles[veh] = nil
 end )
