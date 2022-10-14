@@ -21,7 +21,6 @@ end )
 local function damageVehicle( veh, ply, speed )
     ply:PrintMessage( HUD_PRINTCENTER, "You're blacking out!" )
     local damage = math.floor( ( speed - punishSpeed ) / 10  * damageMultiplier )
-    local pitch = math.Clamp( 100 + -damage, 40, 100 )
     veh:TakeDamage( damage, game.GetWorld(), veh )
 end
 
@@ -50,13 +49,13 @@ local function checkVehicle( veh, trackEnt )
     end
     trackEnt.DFANextCheck = tickCount + checkInterval
 
-    local lastPos = trackEnt.DFALastPos
-    trackEnt.DFALastPos = trackEnt:GetVelocity()
-    if not lastPos then
+    local lastVelocity = trackEnt.DFALastVelocity
+    trackEnt.DFALastVelocity = trackEnt:GetVelocity()
+    if not lastVelocity then
         return
     end
 
-    local speed = ( lastPos - trackEnt:GetVelocity() ):Length()
+    local speed = ( lastVelocity - trackEnt:GetVelocity() ):Length()
     if speed > punishSpeed then
         damageVehicle( veh, driver, speed )
     end
@@ -84,8 +83,8 @@ end )
 hook.Add( "PlayerLeaveVehicle", "DFA_UnregisterSeat", function( _, veh )
     local trackEnt = activeVehicles[veh]
     trackEnt.DFALastCheck = nil
-    trackEnt.DFALastPos = nil
+    trackEnt.DFALastVelocity = nil
     veh.DFALastCheck = nil
-    veh.DFALastPos = nil
+    veh.DFALastVelocity = nil
     activeVehicles[veh] = nil
 end )
