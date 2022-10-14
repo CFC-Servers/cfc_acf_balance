@@ -18,9 +18,11 @@ cvars.AddChangeCallback( "dfa_interval", function( _, _, val )
     checkInterval = tonumber( val )
 end )
 
-local function damageVehicle( veh, ply, speed )
-    ply:PrintMessage( HUD_PRINTCENTER, "You're blacking out!" )
+local function damageVehicle( veh, driver, speed )
+    driver:PrintMessage( HUD_PRINTCENTER, "You're blacking out!" )
     local damage = math.floor( ( speed - punishSpeed ) / 10  * damageMultiplier )
+    driver:SetNWBool( "DFA_BlackingOut", true )
+    print( veh, driver, speed, damage )
     veh:TakeDamage( damage, game.GetWorld(), veh )
 end
 
@@ -58,6 +60,10 @@ local function checkVehicle( veh, trackEnt )
     local speed = ( lastVelocity - trackEnt:GetVelocity() ):Length()
     if speed > punishSpeed then
         damageVehicle( veh, driver, speed )
+    else
+        if driver:GetNWBool( "DFA_BlackingOut" ) then
+            driver:SetNWBool( "DFA_BlackingOut", false )
+        end
     end
 end
 
@@ -80,8 +86,9 @@ hook.Add( "PlayerEnteredVehicle", "DFA_RegisterSeat", function( _, veh )
     activeVehicles[veh] = trackEnt
 end )
 
-hook.Add( "PlayerLeaveVehicle", "DFA_UnregisterSeat", function( _, veh )
+hook.Add( "PlayerLeaveVehicle", "DFA_UnregisterSeat", function( driver, veh )
     local trackEnt = activeVehicles[veh]
+    driver:SetNWBool( "DFA_BlackingOut", false )
     trackEnt.DFALastCheck = nil
     trackEnt.DFALastVelocity = nil
     veh.DFALastCheck = nil
