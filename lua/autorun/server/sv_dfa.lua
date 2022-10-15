@@ -1,7 +1,6 @@
 local activeVehicles = {}
 local IsValid = IsValid
 local engine_TickCount = engine.TickCount
-local next = next
 
 local punishSpeed = CreateConVar( "dfa_punishspeed", 425, { FCVAR_ARCHIVE }, "The speed at which the driver should receive punishment.", nil ):GetInt()
 local warningScale = 0.2
@@ -77,10 +76,8 @@ local function checkVehicle( veh, trackEnt )
 
     if speed > blackoutStart then
         driver:SetNWInt( "DFA_BlackingOut", blackoutAmount )
-    else
-        if driver:GetNWInt( "DFA_BlackingOut" ) ~= 0 then
-            driver:SetNWInt( "DFA_BlackingOut", 0 )
-        end
+    elseif driver:GetNWInt( "DFA_BlackingOut" ) ~= 0 then
+        driver:SetNWInt( "DFA_BlackingOut", 0 )
     end
 
     if speed > punishSpeed then
@@ -89,8 +86,6 @@ local function checkVehicle( veh, trackEnt )
 end
 
 local function runCheck()
-    if not next( activeVehicles ) then return end
-
     for veh, trackEnt in pairs( activeVehicles ) do
         checkVehicle( veh, trackEnt )
     end
