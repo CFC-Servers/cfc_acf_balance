@@ -3,28 +3,37 @@ local IsValid = IsValid
 local engine_TickCount = engine.TickCount
 local next = next
 
-local punishSpeed = CreateConVar( "dfa_punishspeed", 400, { FCVAR_ARCHIVE }, "The speed at which the driver should receive punishment.", 0 ):GetInt()
+local punishSpeed = CreateConVar( "dfa_punishspeed", 425, { FCVAR_ARCHIVE }, "The speed at which the driver should receive punishment.", nil ):GetInt()
+local warningScale = 0.2
+local warningStartOffset = punishSpeed * warningScale
 cvars.AddChangeCallback( "dfa_punishspeed", function( _, _, val )
     punishSpeed = tonumber( val )
+    warningStartOffset = punishSpeed * warningScale
 end )
 
-local damageMultiplier = CreateConVar( "dfa_damagemultiplier", 0.4, { FCVAR_ARCHIVE }, "The damage multiplier.", 0 ):GetInt()
+local damageMultiplier = CreateConVar( "dfa_damagemultiplier", 1, { FCVAR_ARCHIVE }, "The damage multiplier.", nil ):GetFloat()
 cvars.AddChangeCallback( "dfa_damagemultiplier", function( _, _, val )
     damageMultiplier = tonumber( val )
 end )
 
-local checkInterval = CreateConVar( "dfa_interval", 5, { FCVAR_ARCHIVE }, "The amount of ticks between acceleration checks.", 0 ):GetInt()
+local checkInterval = CreateConVar( "dfa_interval", 5, { FCVAR_ARCHIVE }, "The amount of ticks between acceleration checks.", nil ):GetInt()
 cvars.AddChangeCallback( "dfa_interval", function( _, _, val )
     checkInterval = tonumber( val )
 end )
 
 local function damageVehicle( veh, driver, speed )
-    driver:PrintMessage( HUD_PRINTCENTER, "You're blacking out!" )
-    local damage = math.floor( ( speed - punishSpeed ) / 10  * damageMultiplier )
-    driver:SetNWBool( "DFA_BlackingOut", true )
-    print( veh, driver, speed, damage )
-    veh:TakeDamage( damage, game.GetWorld(), veh )
+    local speedDiff = speed - punishSpeed
+    local damage = math.Clamp( speedDiff / 8, 0, 200 ) / 10
+    damage = math.Round( damage, 2 )
+    damage = damage * damageMultiplier
+    if IsValid( driver ) then
+        driver:TakeDamage( damage, game.GetWorld(), driver )
+    else
+        vec:TakeDamage( damage, game.GetWorld(), veh )
+    end
 end
+
+local clampMagicNumber = 255 / 2
 
 local function checkVehicle( veh, trackEnt )
     if not IsValid( veh ) or not IsValid( trackEnt ) then
@@ -51,6 +60,8 @@ local function checkVehicle( veh, trackEnt )
     end
     trackEnt.DFANextCheck = tickCount + checkInterval
 
+    if trackEnt.IsInPvp and not trackEnt:IsInPvp() then return end
+
     local lastVelocity = trackEnt.DFALastVelocity
     trackEnt.DFALastVelocity = trackEnt:GetVelocity()
     if not lastVelocity then
@@ -58,12 +69,21 @@ local function checkVehicle( veh, trackEnt )
     end
 
     local speed = ( lastVelocity - trackEnt:GetVelocity() ):Length()
+
+    local blackoutStart = warningStartOffset - punishSpeed
+    local blackoutScale = math.Clamp( speed + blackoutStart, 0, clampMagicNumber ) -- makes it get blacker faster
+    local blackoutAmount = blackoutScale * 2.1
+
+    if speed > blackoutStart then
+        driver:SetNWInt( "DFA_BlackingOut", blackoutAmount )
+    else
+        if driver:GetNWInt( "DFA_BlackingOut" ) ~= 0 then
+            driver:SetNWInt( "DFA_BlackingOut", 0 )
+        end
+    end
+
     if speed > punishSpeed then
         damageVehicle( veh, driver, speed )
-    else
-        if driver:GetNWBool( "DFA_BlackingOut" ) then
-            driver:SetNWBool( "DFA_BlackingOut", false )
-        end
     end
 end
 
@@ -79,16 +99,21 @@ hook.Add( "Think", "DFA_CheckSpeeds", runCheck )
 
 hook.Add( "PlayerEnteredVehicle", "DFA_RegisterSeat", function( _, veh )
     local trackEnt = veh
-    local parent = veh:GetParent()
-    if IsValid( parent ) then
-        trackEnt = parent
+    for _ = 1, 20 do
+        local parent = trackEnt:GetParent()
+        if not IsValid( parent ) then
+            break
+        else
+            trackEnt = parent
+        end
     end
     activeVehicles[veh] = trackEnt
 end )
 
 hook.Add( "PlayerLeaveVehicle", "DFA_UnregisterSeat", function( driver, veh )
     local trackEnt = activeVehicles[veh]
-    driver:SetNWBool( "DFA_BlackingOut", false )
+    driver:SetNWInt( "DFA_BlackingOut", 0 )
+    if not IsValid( trackEnt ) then return end
     trackEnt.DFALastCheck = nil
     trackEnt.DFALastVelocity = nil
     veh.DFALastCheck = nil
