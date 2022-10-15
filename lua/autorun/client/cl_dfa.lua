@@ -6,29 +6,26 @@ local ScrH = ScrH
 local currentRefractAmount = 0
 local maxTheoreticalInputAlpha = 255
 local maxComfortableRefraction = 0.05
-local refractionRescaleMul = 0.006
+local refractionRescaleMul = 0.006 -- best as a bit more than the above var. eg 0.05 > 0.006
 
 function doBlackoutOverlayEffect( alpha )
     local alphaNormalized = alpha / maxTheoreticalInputAlpha
     local refractAmount = math.Clamp( alphaNormalized * refractionRescaleMul, 0, maxComfortableRefraction )
-
-    if refractAmount == currentRefractAmount then return end
-    currentRefractAmount = refractAmount
-
-    local refractAmountConVar = GetConVar( "pp_mat_overlay_refractamount" )
-    local materialConVar = GetConVar( "pp_mat_overlay" )
     local overlayMaterial = ""
 
-    if refractAmount > 0 then
-        overlayMaterial = "models/props_c17/fisheyelens"
-    end
+    if refractAmount ~= currentRefractAmount then
+        currentRefractAmount = refractAmount
 
-    materialConVar:SetString( overlayMaterial )
-    refractAmountConVar:SetFloat( refractAmount )
+        if refractAmount > 0 then
+            overlayMaterial = "models/props_c17/fisheyelens"
+        end
+    end
+    DrawMaterialOverlay( overlayMaterial, refractAmount )
+
 end
 
 local blackoutAlpha = 0
-local maxAlpha = 235 -- if higher than 255 will stay dark for long time
+local maxAlpha = 235 -- if blackoutAlpha somehow ends up above 255 then it will be stuck blacked out for like seconds, so max
 
 hook.Add( "HUDPaint", "HUDPaint_DrawABox", function()
     local blackingOutTarget = LocalPlayer():GetNWInt( "DFA_BlackingOut", 0 )
@@ -44,6 +41,7 @@ hook.Add( "HUDPaint", "HUDPaint_DrawABox", function()
 
         elseif blackoutAlpha > blackingOutTarget then
             blackoutAlpha = math.Clamp( blackoutAlpha - 0.45, blackingOutTarget, maxAlpha ) -- goes down slow tho
+
         end
     end
 
@@ -53,4 +51,5 @@ hook.Add( "HUDPaint", "HUDPaint_DrawABox", function()
 
     surface_SetDrawColor( 0, 0, 0, finalAlphaClamped )
     surface_DrawRect( 0, 0, ScrW(), ScrH() )
+
 end )

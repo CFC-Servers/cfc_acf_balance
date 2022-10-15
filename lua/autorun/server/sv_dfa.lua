@@ -33,7 +33,8 @@ local function damageVehicle( veh, driver, speed )
     end
 end
 
-local clampMagicNumber = 255 / 2
+local blackoutScaleDivisor = 2 -- how quickly should blackout ramp up? 4 for 4x as fast, 2 for 2x as fast
+local clampMagicNumber = 255 / blackoutScaleDivisor
 
 local function checkVehicle( veh, trackEnt )
     if not IsValid( veh ) or not IsValid( trackEnt ) then
@@ -72,7 +73,7 @@ local function checkVehicle( veh, trackEnt )
 
     local blackoutStart = warningStartOffset - punishSpeed
     local blackoutScale = math.Clamp( speed + blackoutStart, 0, clampMagicNumber ) -- makes it get blacker faster
-    local blackoutAmount = blackoutScale * 2.1
+    local blackoutAmount = blackoutScale * ( blackoutScaleDivisor * 1.1 )
 
     if speed > blackoutStart then
         driver:SetNWInt( "DFA_BlackingOut", blackoutAmount )
