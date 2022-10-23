@@ -61,6 +61,7 @@ local function checkVehicle( veh, trackEnt )
     trackEnt.DFANextCheck = tickCount + checkInterval
 
     if trackEnt.IsInPvp and not trackEnt:IsInPvp() then return end
+    if trackEnt.IsSimfphyscar then return end
 
     local lastVelocity = trackEnt.DFALastVelocity
     trackEnt.DFALastVelocity = trackEnt:GetVelocity()
