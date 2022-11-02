@@ -6,7 +6,7 @@ local ScrH = ScrH
 local currentRefractAmount = 0
 local maxTheoreticalInputAlpha = 255
 local maxComfortableRefraction = 0.05
-local refractionRescaleMul = 0.006 -- best as a bit more than the above var. eg 0.05 > 0.006
+local refractionRescaleMul = 0.006 -- best as a bit "more" than the above var. eg 0.05 > 0.006
 
 function doBlackoutOverlayEffect( alpha )
     local alphaNormalized = alpha / maxTheoreticalInputAlpha
@@ -25,10 +25,11 @@ function doBlackoutOverlayEffect( alpha )
 end
 
 local blackoutAlpha = 0
-local maxAlpha = 235 -- if blackoutAlpha somehow ends up above 255 then it will be stuck blacked out for like seconds, so max
+local maxAlpha = 254 -- if blackoutAlpha somehow ends up above 255 then it will be stuck blacked out for like seconds, so max
 
 hook.Add( "HUDPaint", "HUDPaint_DrawABox", function()
     local blackingOutTarget = LocalPlayer():GetNWInt( "DFA_BlackingOut", 0 )
+    blackingOutTarget = math.Clamp( blackingOutTarget, 0, maxAlpha )
 
     if blackoutAlpha ~= blackingOutTarget then
 
@@ -36,20 +37,18 @@ hook.Add( "HUDPaint", "HUDPaint_DrawABox", function()
             blackoutAlpha = 0
 
         elseif blackoutAlpha < blackingOutTarget then
-            local toAdd = math.random( 18, 25 ) -- randomize this so it feel less jerky
+            local toAdd = math.random( 8, 12 ) -- randomize this so it feel less jerky
             blackoutAlpha = math.Clamp( blackoutAlpha + toAdd, 0, blackingOutTarget ) -- fast ramp up
 
         elseif blackoutAlpha > blackingOutTarget then
-            blackoutAlpha = math.Clamp( blackoutAlpha - 0.45, blackingOutTarget, maxAlpha ) -- goes down slow tho
+            blackoutAlpha = math.Clamp( blackoutAlpha - 0.2, blackingOutTarget, 255 ) -- goes down slow tho
 
         end
     end
 
     doBlackoutOverlayEffect( blackoutAlpha )
 
-    local finalAlphaClamped = math.Clamp( blackoutAlpha, 0, 250 ) -- players can always see a bit
-
-    surface_SetDrawColor( 0, 0, 0, finalAlphaClamped )
+    surface_SetDrawColor( 0, 0, 0, blackoutAlpha )
     surface_DrawRect( 0, 0, ScrW(), ScrH() )
 
 end )

@@ -2,12 +2,12 @@ local activeVehicles = {}
 local IsValid = IsValid
 local engine_TickCount = engine.TickCount
 
-local punishSpeed = CreateConVar( "dfa_punishspeed", 425, { FCVAR_ARCHIVE }, "The speed at which the driver should receive punishment.", nil ):GetInt()
+local punishAccel = CreateConVar( "dfa_punishaccel", 425, { FCVAR_ARCHIVE }, "The acceleration at which the driver should receive punishment.", nil ):GetInt()
 local warningScale = 0.2
-local warningStartOffset = punishSpeed * warningScale
-cvars.AddChangeCallback( "dfa_punishspeed", function( _, _, val )
-    punishSpeed = tonumber( val )
-    warningStartOffset = punishSpeed * warningScale
+local warningStartOffset = punishAccel * warningScale
+cvars.AddChangeCallback( "dfa_punishaccel", function( _, _, val )
+    punishAccel = tonumber( val )
+    warningStartOffset = punishAccel * warningScale
 end )
 
 local damageMultiplier = CreateConVar( "dfa_damagemultiplier", 1, { FCVAR_ARCHIVE }, "The damage multiplier.", nil ):GetFloat()
@@ -20,15 +20,18 @@ cvars.AddChangeCallback( "dfa_interval", function( _, _, val )
     checkInterval = tonumber( val )
 end )
 
-local function damageVehicle( veh, driver, speed )
-    local speedDiff = speed - punishSpeed
-    local damage = math.Clamp( speedDiff / 8, 0, 200 ) / 10
+local world = game.GetWorld()
+
+local function damageVehicle( veh, driver, accel )
+    local accelDiff = accel - punishAccel
+    local accelDiffDivided = accelDiff / 14 --magic number, 14 results in fair feeling damage
+    local damage = math.Clamp( accelDiffDivided, 0, 200 )
     damage = math.Round( damage, 2 )
     damage = damage * damageMultiplier
     if IsValid( driver ) then
-        driver:TakeDamage( damage, game.GetWorld(), driver )
+        driver:TakeDamage( damage, world, world )
     else
-        vec:TakeDamage( damage, game.GetWorld(), veh )
+        veh:TakeDamage( damage, world, world )
     end
 end
 
@@ -69,20 +72,27 @@ local function checkVehicle( veh, trackEnt )
         return
     end
 
-    local speed = ( lastVelocity - trackEnt:GetVelocity() ):Length()
+    local accel = ( lastVelocity - trackEnt:GetVelocity() ):Length()
+    local oldAccel = trackEnt.oldBlackoutAcceleration or accel
 
-    local blackoutStart = warningStartOffset - punishSpeed
-    local blackoutScale = math.Clamp( speed + blackoutStart, 0, clampMagicNumber ) -- makes it get blacker faster
+    trackEnt.oldBlackoutAcceleration = accel
+
+    local averageAccel = ( accel + oldAccel ) / 2 -- use average so random, insane 1 tick acceleration isnt as crazy
+
+    local blackoutStart = warningStartOffset - punishAccel
+    local blackoutScale = math.Clamp( averageAccel + blackoutStart, 0, clampMagicNumber ) -- makes it get blacker faster
     local blackoutAmount = blackoutScale * ( blackoutScaleDivisor * 1.1 )
 
-    if speed > blackoutStart then
+    --driver:PrintMessage( HUD_PRINTTALK, math.Round( accel ) )
+
+    if averageAccel > blackoutStart then
         driver:SetNWInt( "DFA_BlackingOut", blackoutAmount )
     elseif driver:GetNWInt( "DFA_BlackingOut" ) ~= 0 then
         driver:SetNWInt( "DFA_BlackingOut", 0 )
     end
 
-    if speed > punishSpeed then
-        damageVehicle( veh, driver, speed )
+    if averageAccel > punishAccel then
+        damageVehicle( veh, driver, averageAccel )
     end
 end
 
@@ -92,7 +102,7 @@ local function runCheck()
     end
 end
 
-hook.Add( "Think", "DFA_CheckSpeeds", runCheck )
+hook.Add( "Think", "DFA_CheckAcceleration", runCheck )
 
 hook.Add( "PlayerEnteredVehicle", "DFA_RegisterSeat", function( _, veh )
     local trackEnt = veh
