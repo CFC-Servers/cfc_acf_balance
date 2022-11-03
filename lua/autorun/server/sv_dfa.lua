@@ -20,7 +20,6 @@ cvars.AddChangeCallback( "dfa_interval", function( _, _, val )
     checkInterval = tonumber( val )
 end )
 
-local world = game.GetWorld()
 
 local function damageVehicle( veh, driver, accel )
     local accelDiff = accel - punishAccel
@@ -28,6 +27,9 @@ local function damageVehicle( veh, driver, accel )
     local damage = math.Clamp( accelDiffDivided, 0, 200 )
     damage = math.Round( damage, 2 )
     damage = damage * damageMultiplier
+
+    local world = game.GetWorld()
+
     if IsValid( driver ) then
         driver:TakeDamage( damage, world, world )
     else
@@ -63,7 +65,7 @@ local function checkVehicle( veh, trackEnt )
     end
     trackEnt.DFANextCheck = tickCount + checkInterval
 
-    if trackEnt.IsInPvp and not trackEnt:IsInPvp() then return end
+    if CFCPvp and not trackEnt:IsInPvp() then return end
     if trackEnt.IsSimfphyscar then return end
 
     local lastVelocity = trackEnt.DFALastVelocity
@@ -82,8 +84,6 @@ local function checkVehicle( veh, trackEnt )
     local blackoutStart = warningStartOffset - punishAccel
     local blackoutScale = math.Clamp( averageAccel + blackoutStart, 0, clampMagicNumber ) -- makes it get blacker faster
     local blackoutAmount = blackoutScale * ( blackoutScaleDivisor * 1.1 )
-
-    --driver:PrintMessage( HUD_PRINTTALK, math.Round( accel ) )
 
     if averageAccel > blackoutStart then
         driver:SetNWInt( "DFA_BlackingOut", blackoutAmount )
