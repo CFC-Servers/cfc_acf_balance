@@ -28,15 +28,16 @@ local blackoutAlpha = 0
 local maxAlpha = 254 -- if blackoutAlpha somehow ends up above 255 then it will be stuck blacked out for like seconds, so max
 
 hook.Add( "HUDPaint", "HUDPaint_DrawABox", function()
+
+    if not LocalPlayer():InVehicle() then return end
+
     local blackingOutTarget = LocalPlayer():GetNWInt( "DFA_BlackingOut", 0 )
     blackingOutTarget = math.Clamp( blackingOutTarget, 0, maxAlpha )
 
+    if blackingOutTarget == 0 and blackoutAlpha < 1 then return end
+
     if blackoutAlpha ~= blackingOutTarget then
-
-        if blackoutAlpha < 1 and blackingOutTarget == 0 then -- never get stuck on near zero values
-            blackoutAlpha = 0
-
-        elseif blackoutAlpha < blackingOutTarget then
+        if blackoutAlpha < blackingOutTarget then
             local toAdd = math.random( 8, 12 ) -- randomize this so it feel less jerky
             blackoutAlpha = math.Clamp( blackoutAlpha + toAdd, 0, blackingOutTarget ) -- fast ramp up
 
