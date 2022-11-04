@@ -10,6 +10,12 @@ local legalChecks = {
         if #constraints > 0 then
             return false, "Refill constrainted", "Your refill crate has constraints and has been disabled."
         end
+
+        local phys = ent:GetPhysicsObject()
+        print( phys )
+        if IsValid( phys ) and phys:IsMoveable() then
+            return false, "Refill moveable", "Your refill crate is unfrozen and has been disabled."
+        end
     end
 }
 
