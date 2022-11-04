@@ -12,7 +12,6 @@ local legalChecks = {
         end
 
         local phys = ent:GetPhysicsObject()
-        print( phys )
         if IsValid( phys ) and phys:IsMoveable() then
             return false, "Refill moveable", "Your refill crate is unfrozen and has been disabled."
         end
