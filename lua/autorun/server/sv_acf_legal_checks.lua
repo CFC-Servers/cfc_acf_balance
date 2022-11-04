@@ -18,7 +18,26 @@ local legalChecks = {
     end
 }
 
+local badMaterials = {
+    ["models/effects/vol_light001"] = true,
+    ["models/effects/comball_tape"] = true,
+    ["models/props_combine/portalball001_sheet"] = true,
+    ["models/effects/comball_sphere"] = true
+}
+
 local function checkLegal( ent )
+    -- Checks for all ent types
+    local color = ent:GetColor()
+    if color.a <= 10 then
+        return false, "Low Alpha", "Your acf part has a low alpha value and has been disabled."
+    end
+
+    local mat = string.lower( ent:GetMaterial() )
+    if badMaterials[mat] then
+        return false, "Bad Material", "Your acf part has a bad material and has been disabled."
+    end
+
+    -- Specific class checks
     local check = legalChecks[ent:GetClass()]
     if not check then return end
 
