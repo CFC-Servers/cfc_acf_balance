@@ -34,7 +34,7 @@ local function checkLegal( ent )
 
     local mat = string.lower( ent:GetMaterial() )
     if badMaterials[mat] then
-        return false, "Bad Material", "Your acf part has a bad material and has been disabled."
+        return false, "Bad Material", "Your acf part has a bad material (" .. mat .. ") and has been disabled."
     end
 
     -- Specific class checks
