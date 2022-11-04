@@ -13,7 +13,7 @@ local legalChecks = {
 
         local phys = ent:GetPhysicsObject()
         if IsValid( phys ) and phys:IsMoveable() then
-            return false, "Refill moveable", "Your refill crate is unfrozen and has been disabled."
+            return false, "Refill unfrozen", "Your refill crate is unfrozen and has been disabled."
         end
     end
 }
