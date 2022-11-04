@@ -29,7 +29,7 @@ local function checkLegal( ent )
     -- Checks for all ent types
     local color = ent:GetColor()
     if color.a <= 10 then
-        return false, "Low Alpha", "Your acf part has a low alpha value and has been disabled."
+        return false, "Low Alpha", "Your ACF part has a low alpha value and has been disabled."
     end
 
     local mat = string.lower( ent:GetMaterial() )
