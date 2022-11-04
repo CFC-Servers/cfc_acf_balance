@@ -1,17 +1,17 @@
-local legalChecks = {}
+local legalChecks = {
+    acf_ammo = function( ent )
+        if not ent.IsRefill then return end
 
-function legalChecks.acf_ammo( ent )
-    if not ent.IsRefill then return end
+        if IsValid( ent:GetParent() ) then
+            return false, "Refill parented", "Your refill crate is parented and has been disabled."
+        end
 
-    if IsValid( ent:GetParent() ) then
-        return false, "Refill parented", "Your refill crate is parented and has been disabled."
+        local constraints = constraint.GetTable( ent )
+        if #constraints > 0 then
+            return false, "Refill constrainted", "Your refill crate has constraints and has been disabled."
+        end
     end
-
-    local constraints = constraint.GetTable( ent )
-    if #constraints > 0 then
-        return false, "Refill constrainted", "Your refill crate has constraints and has been disabled."
-    end
-end
+}
 
 local function checkLegal( ent )
     local check = legalChecks[ent:GetClass()]
