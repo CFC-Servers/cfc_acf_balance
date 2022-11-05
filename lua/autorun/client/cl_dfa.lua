@@ -29,12 +29,12 @@ local maxAlpha = 254 -- if blackoutAlpha somehow ends up above 255 then it will 
 
 hook.Add( "HUDPaint", "HUDPaint_DrawABox", function()
 
-    if not LocalPlayer():InVehicle() then return end
+    if not LocalPlayer():InVehicle() then blackoutAlpha = 0 return end
 
     local blackingOutTarget = LocalPlayer():GetNWInt( "DFA_BlackingOut", 0 )
     blackingOutTarget = math.Clamp( blackingOutTarget, 0, maxAlpha )
 
-    if blackingOutTarget == 0 and blackoutAlpha < 1 then return end
+    if blackingOutTarget == 0 and blackoutAlpha < 1 then blackoutAlpha = 0 return end
 
     if blackoutAlpha ~= blackingOutTarget then
         if blackoutAlpha < blackingOutTarget then
