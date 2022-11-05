@@ -1,9 +1,8 @@
 local legalChecks = {
     acf_ammo = function( ent )
         local parent = ent:GetParent()
-        local parentClass = parent:GetClass()
 
-        if IsValid( parent ) and ( parentClass == "gmod_wire_hologram" or parentClass == "starfall_hologram" ) then
+        if IsValid( parent ) and ( parent:GetClass() == "gmod_wire_hologram" or parent:GetClass() == "starfall_hologram" ) then
             return false, "Hologram parent", "Your ammo crate is parented to a hologram and has been disabled."
         end
 
