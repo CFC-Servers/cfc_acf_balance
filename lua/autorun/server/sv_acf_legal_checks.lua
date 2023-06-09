@@ -59,3 +59,17 @@ local function checkLegal( ent )
 end
 
 hook.Add( "ACF_IsLegal", "ACFBalance_CheckLegality", checkLegal )
+
+hook.Add( "ACF_AmmoCanCookOff", "ACFBalance_CheckCookOff", function( ent )
+    local hasWeapons = ent.Weapons and next( ent.Weapons )
+    if hasWeapons then return end
+
+    return false
+end )
+
+hook.Add( "ACF_AmmoExplode", "ACFBalance_CheckExplosion", function( ent )
+    local hasWeapons = ent.Weapons and next( ent.Weapons )
+    if hasWeapons then return end
+
+    return false
+end )
