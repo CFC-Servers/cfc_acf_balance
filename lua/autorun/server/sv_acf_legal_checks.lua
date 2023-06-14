@@ -3,6 +3,14 @@ local parentClassesToBlock = {
     starfall_hologram = true
 }
 
+local classesToCheck = {
+    acf_gun = true,
+    acf_rack = true,
+    acf_engine = true,
+    acf_ammo = true,
+    acf_gearbox = true
+}
+
 local legalChecks = {
     acf_ammo = function( ent )
         local parent = ent:GetParent()
@@ -37,7 +45,18 @@ local badMaterials = {
 }
 
 local function checkLegal( ent )
-    -- Checks for all ent types
+    local entClass = ent:GetClass()
+    -- Specific class checks
+    local check = legalChecks[entClass]
+    if check then
+        local legal, reason, message = check( ent )
+        if legal == false then
+            return false, reason, message
+        end
+    end
+
+    if not classesToCheck[entClass] then return end
+
     local color = ent:GetColor()
     if color.a <= 10 then
         return false, "Low Alpha", "Your ACF part has a low alpha value and has been disabled."
@@ -46,15 +65,6 @@ local function checkLegal( ent )
     local mat = string.lower( ent:GetMaterial() )
     if badMaterials[mat] then
         return false, "Bad Material", "Your acf part has a bad material (" .. mat .. ") and has been disabled."
-    end
-
-    -- Specific class checks
-    local check = legalChecks[ent:GetClass()]
-    if not check then return end
-
-    local legal, reason, message = check( ent )
-    if legal == false then
-        return false, reason, message
     end
 end
 
