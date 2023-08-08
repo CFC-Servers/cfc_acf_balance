@@ -5,7 +5,7 @@ local LIGHTRED = Color( 175, 25, 25 )
 local LIGHTGREY = Color( 200, 200, 200 )
 
 local maxCaliber = 280
-local caliberLimit = 450
+local caliberLimit = 900
 local missileCaliberScale = 0.5
 
 local function getCaliber( what, data )
