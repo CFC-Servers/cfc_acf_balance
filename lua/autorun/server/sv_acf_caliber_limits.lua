@@ -96,7 +96,7 @@ end
 
 local queueCaliberMessage
 do
-    local timerName = function( ply )
+    local function getTimerName( ply )
         return "ACFBalance_CaliberLimitAlert_" .. ply:SteamID64()
     end
 
@@ -107,7 +107,7 @@ do
         if not ply:IsValid() then return end
 
         -- Just in case one was already queued somehow
-        timer.Remove( timerName( ply ) )
+        timer.Remove( getTimerName( ply ) )
 
         local current = getPlyCaliber( ply )
         local message = "Your current ACF Caliber usage: "
@@ -141,7 +141,7 @@ do
     queueCaliberMessage = function( ply, prefix, delay )
         delay = delay or 0.15
 
-        timer.Create( timerName( ply ), delay, 1, function()
+        timer.Create( getTimerName( ply ), delay, 1, function()
             sendCaliberMessage( ply, prefix )
         end )
     end
