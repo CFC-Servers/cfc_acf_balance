@@ -1,12 +1,21 @@
 util.AddNetworkString( "ACFBalance_CaliberLimitAlert" )
 
+local GREY = Color( 200, 200, 200 )
 local WHITE = Color( 255, 255, 255 )
-local LIGHTRED = Color( 175, 25, 25 )
-local LIGHTGREY = Color( 200, 200, 200 )
+local LIGHT_RED = Color( 175, 25, 25 )
 
 local maxCaliber = 280
-local caliberLimit = 900
 local missileCaliberScale = 0.5
+
+local caliberLimit
+do
+    local _caliberLimit = CreateConVar( "acf_caliber_limit", "900", FCVAR_ARCHIVE + FCVAR_NOTIFY, "The maximum ACF caliber a player can have" )
+    caliberLimit = _caliberLimit:GetInt()
+
+    cvars.AddChangeCallback( "acf_caliber_limit", function( _, _, new )
+        caliberLimit = tonumber( new )
+    end, "update_local" )
+end
 
 local function getCaliber( what, data )
     local caliber = data.Caliber or 40
@@ -17,12 +26,48 @@ local function getCaliber( what, data )
     return caliber
 end
 
-local guns = "ACFBalance_Guns"
-local calibers = "ACFBalance_TotalCaliber"
-hook.Add( "PlayerInitialSpawn", "ACFBalance_CaliberLimit", function( ply )
-    ply[guns] = {}
-    ply[calibers] = 0
-end )
+local getPlyGuns
+local getPlyCaliber, setPlyCaliber
+local addPlyCaliber, subtractPlyCaliber
+
+do
+    -- Accesor keys
+    local guns = "ACFBalance_Guns"
+    local caliber = "ACFBalance_TotalCaliber"
+
+    getPlyGuns = function( ply )
+        return ply[guns]
+    end
+
+    getPlyCaliber = function( ply )
+        return ply[caliber]
+    end
+
+    setPlyCaliber = function( ply, newCaliber )
+        ply[caliber] = newCaliber
+    end
+
+    addPlyCaliber = function( ply, amount )
+        local current = getPlyCaliber( ply )
+        local new = current + amount
+        setPlyCaliber( ply, new )
+
+        return new
+    end
+
+    subtractPlyCaliber = function( ply, amount )
+        local current = getPlyCaliber( ply )
+        local new = current - amount
+        setPlyCaliber( ply, new )
+
+        return new
+    end
+
+    hook.Add( "PlayerInitialSpawn", "ACFBalance_CaliberLimit", function( ply )
+        ply[guns] = {}
+        setPlyCaliber( ply, 0 )
+    end )
+end
 
 local getRangeColor
 do
@@ -51,35 +96,38 @@ end
 
 local queueCaliberMessage
 do
-    local timerPrefix = "ACFBalance_CaliberLimitAlert_"
+    local timerName = function( ply )
+        return "ACFBalance_CaliberLimitAlert_" .. ply:SteamID64()
+    end
 
     local function sendCaliberMessage( ply, prefix )
         prefix = prefix or {}
 
-        if not ply and ply:IsValid() then return end
+        if not ply then return end
+        if not ply:IsValid() then return end
 
         -- Just in case one was already queued somehow
-        timer.Remove( timerPrefix .. ply:SteamID64() )
+        timer.Remove( timerName( ply ) )
 
-        local current = ply[calibers]
+        local current = getPlyCaliber( ply )
         local message = "Your current ACF Caliber usage: "
         local currentCol = getRangeColor( current, caliberLimit )
 
         local messageTable = table.Add( prefix, {
-            LIGHTGREY, message,
+            GREY, message,
             currentCol, tostring( current ),
-            LIGHTGREY, " / ",
+            GREY, " / ",
             WHITE, tostring( caliberLimit ),
-            LIGHTGREY, " (",
+            GREY, " (",
             currentCol, "∆ ", tostring( caliberLimit - current ),
-            LIGHTGREY, ")\n"
+            GREY, ")\n"
         } )
 
-        for gun, caliber in pairs( ply[guns] ) do
+        for gun, caliber in pairs( getPlyGuns( ply ) ) do
             table.Add( messageTable, {
-                LIGHTGREY, "  - ",
+                GREY, "  - ",
                 WHITE, gun.Name,
-                LIGHTGREY, " (", gun:GetClass(), "): ",
+                GREY, " (", gun:GetClass(), "): ",
                 getRangeColor( caliber, maxCaliber ), tostring( caliber ),
                 "\n"
             } )
@@ -93,7 +141,7 @@ do
     queueCaliberMessage = function( ply, prefix, delay )
         delay = delay or 0.15
 
-        timer.Create( timerPrefix .. ply:SteamID64(), delay, 1, function()
+        timer.Create( timerName( ply ), delay, 1, function()
             sendCaliberMessage( ply, prefix )
         end )
     end
@@ -102,6 +150,7 @@ do
         if text ~= "!calibers" then return end
 
         queueCaliberMessage( ply )
+
         return ""
     end )
 end
@@ -119,20 +168,22 @@ do
         local plyTable = ply:GetTable()
         local gunCaliber = getCaliber( what, entData )
 
-        plyTable[guns][ent] = gunCaliber
-        ent:CallOnRemove( "ACFBalance_CaliberLimit", function()
-            if not ply and ply:IsValid() then return end
+        local plyGuns = getPlyGuns( plyTable )
 
-            plyTable[guns][ent] = nil
-            plyTable[calibers] = plyTable[calibers] - gunCaliber
+        plyGuns[ent] = gunCaliber
+        ent:CallOnRemove( "ACFBalance_CaliberLimit", function()
+            if not ply then return end
+            if not ply:IsValid() then return end
+
+            plyGuns[ent] = nil
+            subtractPlyCaliber( plyTable, gunCaliber )
         end )
 
-        local newCaliber = plyTable[calibers] + gunCaliber
-        plyTable[calibers] = newCaliber
+        local newCaliber = addPlyCaliber( plyTable, gunCaliber )
 
         if newCaliber > caliberLimit then
             queueCaliberMessage( ply, {
-                LIGHTRED, "WARNING: ",
+                LIGHT_RED, "WARNING: ",
                 WHITE, "You have exceeded the ACF Caliber limit! Your ACF weapons will not work!\n"
             } )
         end
@@ -143,10 +194,9 @@ hook.Add( "ACF_FireShell", "ACFBalance_CaliberLimit", function( gun )
     local owner = gun.Owner
     if not owner or not owner:IsValid() then return end
 
-    local plyTable = owner:GetTable()
-    local totalCaliber = plyTable[calibers]
+    local currentCaliber = getPlyCaliber( owner )
 
-    if totalCaliber > caliberLimit then
+    if currentCaliber > caliberLimit then
         return false
     end
 end )
