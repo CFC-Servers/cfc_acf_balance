@@ -5,7 +5,16 @@ local WHITE = Color( 255, 255, 255 )
 local LIGHT_RED = Color( 175, 25, 25 )
 
 local maxCaliber = 280
-local missileCaliberScale = 0.5
+
+local missileCaliberScale
+do
+    local _missileCaliberScale = CreateConVar( "acf_caliber_limit_missile_scale", "0.2", FCVAR_ARCHIVE + FCVAR_NOTIFY, "The scale of missile calibers for the caliber limit" )
+    missileCaliberScale = _missileCaliberScale:GetFloat()
+
+    cvars.AddChangeCallback( "acf_caliber_limit_missile_scale", function( _, _, new )
+        missileCaliberScale = tonumber( new )
+    end, "update_local" )
+end
 
 local caliberLimit
 do
