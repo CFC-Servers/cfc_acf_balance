@@ -1,3 +1,16 @@
+-- Prevent ACF ammo crates from damaging other people's builds.
+hook.Add( "ACF_PreDamageEntity", "ACFBalance_AmmoCrate_DontNukeBases", function( ent, _, dmgInfo )
+    local attacker = dmgInfo:GetAttacker()
+    if attacker:GetClass() ~= "acf_ammo" then return end
+    if ent:IsPlayer() then return end
+
+    local victimOwner = ent:CPPIGetOwner()
+    local attackerOwner = attacker:CPPIGetOwner()
+    if victimOwner == attackerOwner then return end
+
+    return false
+end )
+
 -- Prevent ACF ammo crates from damaging static, unmoving bases.
 hook.Add( "ACF_PreDamageEntity", "ACFBalance_AmmoCrate_DontNukeBases", function( ent, _, dmgInfo )
     local attacker = dmgInfo:GetAttacker()
