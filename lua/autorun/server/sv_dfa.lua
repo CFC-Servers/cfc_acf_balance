@@ -52,8 +52,6 @@ local function getVelocityBulletproof( ent )
     ent.DFAOldVelocityPos = currPos
     ent.DFALastVelCheckTime = currTime
 
-    debugoverlay.Line( oldPos, currPos, 15, color_white, true )
-
     local deltaTime = math_abs( currTime - oldTime )
 
     local vel = currPos - oldPos
@@ -113,8 +111,6 @@ local function checkVehicle( veh )
         veh.DFANextCheck = curTime + nextCheckTimeOffset * 5
 
     end
-
-    print( lastVelocity, currVelocity )
 
     local accel = ( lastVelocity - currVelocity ):Length()
     local oldAccel = veh.oldBlackoutAcceleration or accel
