@@ -1,13 +1,17 @@
+local SOLID_NONE = SOLID_NONE
+local FSOLID_NOT_SOLID = FSOLID_NOT_SOLID
+local simphysClass = "gmod_sent_vehicle_fphysics_base"
 local entMeta = FindMetaTable( "Entity" )
 
 entMeta.o_SetNotSolid = entMeta.o_SetNotSolid or entMeta.SetNotSolid
 function entMeta:SetNotSolid( solid )
-    if self:GetClass() == "gmod_sent_vehicle_fphysics_base" then
+    local class = self:GetClass()
+    if class == simphysClass then
         self:o_SetNotSolid( solid )
         return
     end
 
-    if self:GetClass() == "prop_vehicle_prisoner_pod" and self:GetOwner():GetClass() == "gmod_sent_vehicle_fphysics_base" then
+    if class == "prop_vehicle_prisoner_pod" and self:GetOwner():GetClass() == simphysClass then
         self:o_SetNotSolid( solid )
         return
     end
