@@ -1,5 +1,7 @@
 local activeVehicles = {}
-local _IsValid = IsValid
+local IsValid = IsValid
+local math_abs = math.abs
+local CurTime = CurTime
 
 local punishAccel = CreateConVar( "dfa_punishaccel", 525, { FCVAR_ARCHIVE }, "The acceleration at which the driver should receive punishment.", nil ):GetInt()
 local warningScale = 0.2
@@ -34,19 +36,16 @@ local function damageVehicle( veh, driver, accel )
 
     local world = game.GetWorld()
 
-    if _IsValid( driver ) then
+    if IsValid( driver ) then
         driver:TakeDamage( damage, world, world )
     else
         veh:TakeDamage( damage, world, world )
     end
 end
 
-local math_abs = math.abs
-local _CurTime = CurTime
-
 local function getVelocityBulletproof( ent )
     local currPos = ent:GetPos()
-    local currTime = _CurTime()
+    local currTime = CurTime()
     local oldPos = ent.DFAOldVelocityPos
     local oldTime = ent.DFALastVelCheckTime
     ent.DFAOldVelocityPos = currPos
@@ -65,12 +64,12 @@ local function startTrackingVehicle( veh )
     veh.DFANextCheck = 0
     veh.DFALastVelocity = vector_origin
     veh.DFAOldVelocityPos = veh:GetPos()
-    veh.DFALastVelCheckTime = _CurTime()
+    veh.DFALastVelCheckTime = CurTime()
 end
 
 local function stopTrackingVehicle( veh )
     activeVehicles[veh] = nil
-    if not _IsValid( veh ) then return end
+    if not IsValid( veh ) then return end
     veh.DFANextCheck = nil
     veh.DFALastVelocity = nil
     veh.DFALastVelCheckTime = nil
@@ -81,25 +80,25 @@ local blackoutScaleDivisor = 2 -- how quickly should blackout ramp up? 4 for 4x 
 local clampMagicNumber = 255 / blackoutScaleDivisor
 
 local function checkVehicle( veh )
-    if not _IsValid( veh ) then
+    if not IsValid( veh ) then
         stopTrackingVehicle( veh )
         return
     end
 
     local driver = veh:GetDriver()
-    if not _IsValid( driver ) then
+    if not IsValid( driver ) then
         stopTrackingVehicle( veh )
         return
     end
 
-    local curTime = _CurTime()
+    local curTime = CurTime()
     local nextCheck = veh.DFANextCheck
 
     if curTime < nextCheck then return end
 
     veh.DFANextCheck = curTime + nextCheckTimeOffset
 
-    --if CFCPvp and not driver:IsInPvp() then return end
+    if CFCPvp and not driver:IsInPvp() then return end
     if veh.IsSimfphyscar then return end
 
     local currVelocity = getVelocityBulletproof( veh )
