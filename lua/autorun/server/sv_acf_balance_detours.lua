@@ -1,4 +1,3 @@
-do return end
 local SOLID_NONE = SOLID_NONE
 local FSOLID_NOT_SOLID = FSOLID_NOT_SOLID
 local simphysClass = "gmod_sent_vehicle_fphysics_base"
@@ -12,9 +11,12 @@ function entMeta:SetNotSolid( solid )
         return
     end
 
-    if class == "prop_vehicle_prisoner_pod" and self:GetOwner():GetClass() == simphysClass then
-        self:o_SetNotSolid( solid )
-        return
+    if class == "prop_vehicle_prisoner_pod" then
+        local owner = self:GetOwner()
+        if IsValid( owner ) and owner:GetClass() == simphysClass then
+            self:o_SetNotSolid( solid )
+            return
+        end
     end
 
     if self:IsVehicle() and not solid then return end
