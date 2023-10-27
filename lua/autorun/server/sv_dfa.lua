@@ -30,7 +30,7 @@ end )
 local function damageVehicle( veh, driver, accel )
     local accelDiff = accel - punishAccel
     local accelDiffDivided = accelDiff / 14 --magic number, 14 results in fair feeling damage
-    local damage = math.Round( accelDiffDivided, 2 )
+    local damage = accelDiffDivided
     damage = damage * damageMultiplier
     damage = math.Clamp( damage, 0, maxDamage )
 
