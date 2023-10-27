@@ -26,12 +26,14 @@ end
 
 local blackoutAlpha = 0
 local maxAlpha = 254 -- if blackoutAlpha somehow ends up above 255 then it will be stuck blacked out for like seconds, so max
+local LocalPlayer = LocalPlayer
 
 hook.Add( "HUDPaint", "HUDPaint_DrawABox", function()
 
-    if not LocalPlayer():InVehicle() then blackoutAlpha = 0 return end
+    local localPly = LocalPlayer()
+    if not localPly:InVehicle() then blackoutAlpha = 0 return end
 
-    local blackingOutTarget = LocalPlayer():GetNWInt( "DFA_BlackingOut", 0 )
+    local blackingOutTarget = localPly:GetNWInt( "DFA_BlackingOut", 0 )
     blackingOutTarget = math.Clamp( blackingOutTarget, 0, maxAlpha )
 
     if blackingOutTarget == 0 and blackoutAlpha < 1 then blackoutAlpha = 0 return end
@@ -52,4 +54,15 @@ hook.Add( "HUDPaint", "HUDPaint_DrawABox", function()
     surface_SetDrawColor( 0, 0, 0, blackoutAlpha )
     surface_DrawRect( 0, 0, ScrW(), ScrH() )
 
+end )
+
+-- from https://github.com/Facepunch/garrysmod/blob/e189f14c088298ca800136fcfcfaf5d8535b6648/garrysmod/lua/includes/modules/killicon.lua#L202
+local color_Icon = Color( 255, 80, 0, 255 )
+killicon.Add( "dfa_acceleration", "vgui/hud/acceleration_kill", color_Icon )
+
+net.Receive( "DFA_DoAKillCredit", function()
+    local died = net.ReadEntity()
+    if not IsValid( died ) then return end
+
+    GAMEMODE:AddDeathNotice( "Acceleration", -1, "dfa_acceleration", died:Nick(), died:Team() )
 end )

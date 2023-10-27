@@ -1,3 +1,5 @@
+util.AddNetworkString( "DFA_DoAKillCredit" )
+
 local activeVehicles = {}
 local IsValid = IsValid
 local math_abs = math.abs
@@ -26,6 +28,12 @@ cvars.AddChangeCallback( "dfa_checkinterval", function( _, _, val )
     nextCheckTimeOffset = tonumber( val )
 end )
 
+local function dfaKill( ply )
+    ply:KillSilent()
+    net.Start( "DFA_DoAKillCredit" )
+        net.WriteEntity( ply )
+    net.Broadcast()
+end
 
 local function damageVehicle( veh, driver, accel )
     local accelDiff = accel - punishAccel
@@ -37,14 +45,18 @@ local function damageVehicle( veh, driver, accel )
     local world = game.GetWorld()
 
     if IsValid( driver ) then
-        driver:TakeDamage( damage, world, world )
+        if driver.Health and ( driver:Health() + -damage ) < 0 then
+            dfaKill( driver )
+        else
+            driver:TakeDamage( damage, world, world )
+        end
     else
         veh:TakeDamage( damage, world, world )
     end
 end
 
 local function getVelocityBulletproof( ent )
-    local currPos = ent:GetPos()
+    local currPos = ent:WorldSpaceCenter()
     local currTime = CurTime()
     local oldPos = ent.DFAOldVelocityPos
     local oldTime = ent.DFALastVelCheckTime
@@ -63,7 +75,7 @@ local function startTrackingVehicle( veh )
     activeVehicles[veh] = true
     veh.DFANextCheck = 0
     veh.DFALastVelocity = vector_origin
-    veh.DFAOldVelocityPos = veh:GetPos()
+    veh.DFAOldVelocityPos = veh:WorldSpaceCenter()
     veh.DFALastVelCheckTime = CurTime()
 end
 
@@ -77,7 +89,7 @@ local function stopTrackingVehicle( veh )
 end
 
 local blackoutScaleDivisor = 2 -- how quickly should blackout ramp up? 4 for 4x as fast, 2 for 2x as fast
-local clampMagicNumber = 255 / blackoutScaleDivisor
+local clampMagicNumber = 255 / blackoutScaleDivisor -- this is related to 0-255 transparency for the literal blacking out on client
 
 local function checkVehicle( veh )
     if not IsValid( veh ) then
