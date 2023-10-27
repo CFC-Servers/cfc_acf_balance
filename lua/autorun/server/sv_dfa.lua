@@ -30,6 +30,7 @@ cvars.AddChangeCallback( "dfa_checkinterval", function( _, _, val )
 end )
 
 local function dfaKill( ply )
+    ply:EmitSound( "Player.FallGib" )
     ply:KillSilent()
     net.Start( "DFA_DoAKillCredit" )
         net.WriteEntity( ply )

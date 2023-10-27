@@ -64,5 +64,11 @@ net.Receive( "DFA_DoAKillCredit", function()
     local died = net.ReadEntity()
     if not IsValid( died ) then return end
 
+    if died == LocalPlayer() then
+        -- you died, make sounds even though serverside it was killsilent!
+        EmitSentence( "HEV_DEAD" .. math.random( 0, 1 ), died:GetPos(), died:EntIndex(), CHAN_AUTO, 0.5 )
+
+    end
+
     GAMEMODE:AddDeathNotice( "Acceleration", -1, "dfa_acceleration", died:Nick(), died:Team() )
 end )
