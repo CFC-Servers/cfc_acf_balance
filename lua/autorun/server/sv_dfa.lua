@@ -1,4 +1,5 @@
 util.AddNetworkString( "DFA_DoAKillCredit" )
+resource.AddFile( "materials/vgui/hud/acceleration_kill" )
 
 local activeVehicles = {}
 local IsValid = IsValid
@@ -45,7 +46,7 @@ local function damageVehicle( veh, driver, accel )
     local world = game.GetWorld()
 
     if IsValid( driver ) then
-        if driver.Health and ( driver:Health() + -damage ) < 0 then
+        if driver.Health and ( driver:Health() + -damage ) <= 0 then
             dfaKill( driver )
         else
             driver:TakeDamage( damage, world, world )
