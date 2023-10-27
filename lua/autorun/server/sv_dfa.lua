@@ -21,7 +21,7 @@ cvars.AddChangeCallback( "dfa_peakdamage", function( _, _, val )
     maxDamage = tonumber( val )
 end )
 
-local nextCheckTimeOffset = CreateConVar( "dfa_checkinterval", 0.1, { FCVAR_ARCHIVE }, "The amount of ticks between acceleration checks.", nil ):GetFloat()
+local nextCheckTimeOffset = CreateConVar( "dfa_checkinterval", 0.1, { FCVAR_ARCHIVE }, "The amount of time between acceleration checks.", nil ):GetFloat()
 cvars.AddChangeCallback( "dfa_checkinterval", function( _, _, val )
     nextCheckTimeOffset = tonumber( val )
 end )
