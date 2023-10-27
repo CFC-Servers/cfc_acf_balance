@@ -1,3 +1,4 @@
+do return end
 local SOLID_NONE = SOLID_NONE
 local FSOLID_NOT_SOLID = FSOLID_NOT_SOLID
 local simphysClass = "gmod_sent_vehicle_fphysics_base"
