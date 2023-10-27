@@ -11,7 +11,10 @@ function entMeta:SetNotSolid( solid )
         return
     end
 
-    if class == "prop_vehicle_prisoner_pod" and self:GetOwner():GetClass() == simphysClass then
+    local owner = self:GetOwner()
+    local ownerClass = owner and owner:IsValid() and owner:GetClass()
+    local ownerIsSimfphys = ownerClass == simphysClass
+    if class == "prop_vehicle_prisoner_pod" and ownerIsSimfphys then
         self:o_SetNotSolid( solid )
         return
     end
