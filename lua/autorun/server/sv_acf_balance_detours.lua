@@ -1,19 +1,37 @@
-local istable = istable
+local SOLID_NONE = SOLID_NONE
+local FSOLID_NOT_SOLID = FSOLID_NOT_SOLID
+local simphysClass = "gmod_sent_vehicle_fphysics_base"
 local entMeta = FindMetaTable( "Entity" )
 
 entMeta.o_SetNotSolid = entMeta.o_SetNotSolid or entMeta.SetNotSolid
 function entMeta:SetNotSolid( solid )
-    if not self:IsVehicle() or solid then
-        return self:o_SetNotSolid( solid )
+    local class = self:GetClass()
+    if class == simphysClass then
+        self:o_SetNotSolid( solid )
+        return
     end
 
-    -- Only affect wire pod linked seats
-    local entTable = self:GetTable()
-    if not istable( entTable.OnDieFunctions ) then
-        return self:o_SetNotSolid( solid )
+    if class == "prop_vehicle_prisoner_pod" then
+        local owner = self:GetOwner()
+        if IsValid( owner ) and owner:GetClass() == simphysClass then
+            self:o_SetNotSolid( solid )
+            return
+        end
     end
 
-    if not entTable.OnDieFunctions.wire_pod_remove then
-        return self:o_SetNotSolid( solid )
-    end
+    if self:IsVehicle() and not solid then return end
+    return self:o_SetNotSolid( solid )
+end
+
+entMeta.o_SetSolid = entMeta.o_SetSolid or entMeta.SetSolid
+function entMeta:SetSolid( solid )
+    if self:IsVehicle() and solid == SOLID_NONE then return end
+    return self:o_SetSolid( solid )
+end
+
+entMeta.o_SetSolidFlags = entMeta.o_SetSolidFlags or entMeta.SetSolidFlags
+function entMeta:SetSolidFlags( flags )
+    local solid = bit.band( flags, FSOLID_NOT_SOLID )
+    if self:IsVehicle() and solid ~= 0 then return end
+    return self:o_SetSolidFlags( flags )
 end
