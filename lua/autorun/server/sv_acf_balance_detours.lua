@@ -19,7 +19,7 @@ function entMeta:SetNotSolid( solid )
         end
     end
 
-    if self:IsVehicle() and not solid then return end
+    if self:IsVehicle() and solid then return end
     return self:o_SetNotSolid( solid )
 end
 
