@@ -67,8 +67,7 @@ net.Receive( "DFA_DoAKillCredit", function()
     if died == LocalPlayer() then
         -- you died, make sounds even though serverside it was killsilent!
         EmitSentence( "HEV_DEAD" .. math.random( 0, 1 ), died:GetPos(), died:EntIndex(), CHAN_AUTO, 0.5 )
-
     end
 
-    GAMEMODE:AddDeathNotice( "Acceleration", -1, "dfa_acceleration", died:Nick(), died:Team() )
+    GAMEMODE:AddDeathNotice( "G Forces", -1, "dfa_acceleration", died:Nick(), died:Team() )
 end )
