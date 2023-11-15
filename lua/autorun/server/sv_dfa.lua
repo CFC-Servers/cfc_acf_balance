@@ -113,7 +113,7 @@ local function checkVehicle( veh )
     veh.DFANextCheck = curTime + nextCheckTimeOffset
 
     if CFCPvp and not driver:IsInPvp() then return end
-    if veh.IsSimfphyscar then return end
+    if veh.fphysSeat then return end
 
     local currVelocity = getVelocityBulletproof( veh )
 
