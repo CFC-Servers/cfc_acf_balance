@@ -1,5 +1,5 @@
 util.AddNetworkString( "DFA_DoAKillCredit" )
-resource.AddSingleFile( "materials/vgui/hud/acceleration_kill.vmt" )
+resource.AddFile( "materials/vgui/hud/acceleration_kill.vmt" )
 
 local activeVehicles = {}
 local IsValid = IsValid
