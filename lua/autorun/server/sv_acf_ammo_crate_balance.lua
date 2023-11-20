@@ -14,6 +14,7 @@ end )
 -- Prevent ACF ammo crates from damaging static, unmoving bases.
 hook.Add( "ACF_PreDamageEntity", "ACFBalance_AmmoCrate_DontNukeBases", function( ent, _, dmgInfo )
     local attacker = dmgInfo:GetAttacker()
+    if not IsValid( attacker ) then return end
     if attacker:GetClass() ~= "acf_ammo" then return end
 
     local parent = ent:GetParent()
