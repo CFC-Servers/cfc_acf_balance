@@ -53,31 +53,32 @@ local function checkVehicle( veh, trackEnt )
     end
 
     local tickCount = engine_TickCount()
-    local nextCheck = trackEnt.DFANextCheck
+    local trackEntTable = trackEnt:GetTable()
+    local nextCheck = trackEntTable.DFANextCheck
 
     if not nextCheck then
-        trackEnt.DFANextCheck = tickCount + checkInterval
+        trackEntTable.DFANextCheck = tickCount + checkInterval
         return
     end
 
     if tickCount < nextCheck then
         return
     end
-    trackEnt.DFANextCheck = tickCount + checkInterval
+    trackEntTable.DFANextCheck = tickCount + checkInterval
 
     if CFCPvp and not driver:IsInPvp() then return end
-    if trackEnt.IsSimfphyscar then return end
+    if trackEntTable.IsSimfphyscar then return end
 
-    local lastVelocity = trackEnt.DFALastVelocity
-    trackEnt.DFALastVelocity = trackEnt:GetVelocity()
+    local lastVelocity = trackEntTable.DFALastVelocity
+    trackEntTable.DFALastVelocity = trackEnt:GetVelocity()
     if not lastVelocity then
         return
     end
 
     local accel = ( lastVelocity - trackEnt:GetVelocity() ):Length()
-    local oldAccel = trackEnt.oldBlackoutAcceleration or accel
+    local oldAccel = trackEntTable.oldBlackoutAcceleration or accel
 
-    trackEnt.oldBlackoutAcceleration = accel
+    trackEntTable.oldBlackoutAcceleration = accel
 
     local averageAccel = ( accel + oldAccel ) / 2 -- use average so random, insane 1 tick acceleration isnt as crazy
 
