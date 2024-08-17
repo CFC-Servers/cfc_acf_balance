@@ -63,7 +63,7 @@ local function getVelocityDelta( ent, entTbl )
     local deltaTime = math_abs( currTime - oldTime )
 
     local vel = currPos - oldPos
-    vel = vel / deltaTime -- so vel doesnt blow up when there's lag or something
+    vel = vel / deltaTime -- anchors vel to time, wont blow up when there's lag or anything
 
     return vel
 end
