@@ -1,13 +1,26 @@
 local activeVehicles = {}
 local IsValid = IsValid
 local engine_TickCount = engine.TickCount
+local math_abs = math.abs
 
-local punishAccel = CreateConVar( "dfa_punishaccel", 425, { FCVAR_ARCHIVE }, "The acceleration at which the driver should receive punishment.", nil ):GetInt()
-local warningScale = 0.2
-local warningStartOffset = punishAccel * warningScale
-cvars.AddChangeCallback( "dfa_punishaccel", function( _, _, val )
-    punishAccel = tonumber( val )
+local warningScale = 0.2 -- when the blacking out starts happening
+
+local defaultAccel = 625
+local punishAccelVar = CreateConVar( "dfa_punishaccelbegin", -1, { FCVAR_ARCHIVE }, "The acceleration at which the driver should receive punishment. -1 for default, " .. defaultAccel, nil )
+local punishAccel
+local function doPunishAccel()
+    local rawValue = punishAccelVar:GetInt()
+    if rawValue == -1 then
+        punishAccel = defaultAccel
+    else
+        punishAccel = rawValue
+    end
     warningStartOffset = punishAccel * warningScale
+end
+doPunishAccel()
+cvars.AddChangeCallback( "dfa_punishaccelbegin", function()
+    doPunishAccel()
+
 end )
 
 local damageMultiplier = CreateConVar( "dfa_damagemultiplier", 1, { FCVAR_ARCHIVE }, "The damage multiplier.", nil ):GetFloat()
@@ -35,6 +48,24 @@ local function damageVehicle( veh, driver, accel )
     else
         veh:TakeDamage( damage, world, world )
     end
+end
+
+local function getVelocityDelta( ent, entTbl )
+    local currPos = ent:WorldSpaceCenter()
+    local currTime = CurTime()
+    local oldPos = entTbl.DFAOldVelocityPos
+    local oldTime = entTbl.DFALastVelCheckTime
+    entTbl.DFAOldVelocityPos = currPos
+    entTbl.DFALastVelCheckTime = currTime
+
+    if not ( oldPos and oldTime ) then return end
+
+    local deltaTime = math_abs( currTime - oldTime )
+
+    local vel = currPos - oldPos
+    vel = vel / deltaTime -- anchors vel to time, wont blow up when there's lag or anything
+
+    return vel
 end
 
 local blackoutScaleDivisor = 2 -- how quickly should blackout ramp up? 4 for 4x as fast, 2 for 2x as fast
@@ -69,13 +100,16 @@ local function checkVehicle( veh, trackEnt )
     if CFCPvp and not driver:IsInPvp() then return end
     if trackEntTable.IsSimfphyscar then return end
 
+    local currVelocity = getVelocityDelta( trackEnt, trackEntTable )
+    if not currVelocity then return end -- setting up
+
     local lastVelocity = trackEntTable.DFALastVelocity
-    trackEntTable.DFALastVelocity = trackEnt:GetVelocity()
+    trackEntTable.DFALastVelocity = currVelocity
     if not lastVelocity then
         return
     end
 
-    local accel = ( lastVelocity - trackEnt:GetVelocity() ):Length()
+    local accel = ( lastVelocity - currVelocity ):Length()
     local oldAccel = trackEntTable.oldBlackoutAcceleration or accel
 
     trackEntTable.oldBlackoutAcceleration = accel
@@ -106,16 +140,7 @@ end
 hook.Add( "Think", "DFA_CheckAcceleration", runCheck )
 
 hook.Add( "PlayerEnteredVehicle", "DFA_RegisterSeat", function( _, veh )
-    local trackEnt = veh
-    for _ = 1, 20 do
-        local parent = trackEnt:GetParent()
-        if not IsValid( parent ) then
-            break
-        else
-            trackEnt = parent
-        end
-    end
-    activeVehicles[veh] = trackEnt
+    activeVehicles[veh] = veh
 end )
 
 hook.Add( "PlayerLeaveVehicle", "DFA_UnregisterSeat", function( driver, veh )
