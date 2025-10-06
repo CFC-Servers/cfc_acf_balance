@@ -44,7 +44,12 @@ local function damageVehicle( veh, driver, accel )
     local world = game.GetWorld()
 
     if IsValid( driver ) then
-        driver:TakeDamage( damage, world, world )
+        local dmg = DamageInfo()
+        dmg:SetDamage( damage )
+        dmg:SetAttacker( world )
+        dmg:SetInflictor( world )
+        dmg:SetDamageType( DMG_DIRECT )
+        driver:TakeDamageInfo( dmg )
     else
         veh:TakeDamage( damage, world, world )
     end
