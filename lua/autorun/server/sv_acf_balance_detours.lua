@@ -2,6 +2,7 @@ local SOLID_NONE = SOLID_NONE
 local FSOLID_NOT_SOLID = FSOLID_NOT_SOLID
 local simphysClass = "gmod_sent_vehicle_fphysics_base"
 local entMeta = FindMetaTable( "Entity" )
+assert( entMeta, "failed to find entity metatable" )
 
 entMeta.o_SetNotSolid = entMeta.o_SetNotSolid or entMeta.SetNotSolid
 function entMeta:SetNotSolid( solid )
